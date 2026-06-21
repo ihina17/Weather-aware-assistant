@@ -1,94 +1,151 @@
 # Product Requirements Document: Weather-Aware Personal Assistant
 
-## Product Summary
+## 1. Product Summary
 
-The Weather-Aware Personal Assistant is a command-line application that reads a local schedule from `calendar.json`, fetches weather data from Open-Meteo, and generates practical advice for the user.
+The Weather-Aware Personal Assistant is a command-line REPL application that reads a local schedule from `calendar.json`, fetches daily weather data from the Open-Meteo public API, and generates practical advice based on the user's events and current weather conditions.
 
-The goal is to demonstrate AI-assisted system orchestration, not just basic coding.
+This project is designed to demonstrate AI-assisted software orchestration. The main goal is not to build the most complex app, but to show that the human acted as the architect by defining the system structure, requirements, constraints, and tests before treating the AI agent as an implementation partner.
 
-## Target User
+## 2. Target User
 
-The target user is a student or busy individual who wants quick schedule-aware weather advice before starting the day.
+The target user is a student or busy individual who wants quick daily advice before leaving for class, errands, work, or outdoor activities.
 
-## Problem
+## 3. Problem Statement
 
-People often check their calendar and weather separately. This app combines both sources and gives direct advice, such as carrying an umbrella, leaving early, or preparing for hot weather.
+Users often check their calendar and the weather separately. This app combines both pieces of information and gives direct advice, such as carrying an umbrella, leaving early, bringing water, wearing a jacket, or preparing a backup plan for outdoor events.
 
-## Core Features
+## 4. Goals
 
-### Read Local Calendar
+The app should:
+
+* Run in the terminal as a simple REPL.
+* Read events from a local `calendar.json` file.
+* Fetch real weather data from Open-Meteo.
+* Generate advice using clear rule-based logic.
+* Keep UI, weather API logic, calendar reading, data models, and advice logic in separate files.
+* Include automated tests that prove the core logic works.
+* Demonstrate that the AI agent was guided by architecture, not simply asked to generate a single script.
+
+## 5. Non-Goals
+
+The app will not include:
+
+* A web interface.
+* A mobile app.
+* Login accounts.
+* Database storage.
+* Google Calendar integration.
+* Push notifications.
+* A paid weather API.
+* Fully LLM-generated advice.
+
+These features are intentionally excluded to keep the project focused on orchestration, modular design, and testable logic.
+
+## 6. User Commands
+
+The CLI supports two commands:
+
+### `today`
+
+Reads the local schedule, fetches weather, prints the user's events, prints weather conditions, and displays advice.
+
+### `exit`
+
+Closes the assistant.
+
+## 7. Calendar Input Schema
 
 The app reads events from `calendar.json`.
 
-Each event includes:
+Each event must include:
 
-- title
-- start
-- end
-- location
-- outdoor
+* `title`: name of the event
+* `start`: ISO datetime string
+* `end`: ISO datetime string
+* `location`: event location
 
-### Fetch Weather
+Each event may also include:
 
-The app fetches weather from Open-Meteo using latitude and longitude.
+* `outdoor`: boolean value indicating whether weather risk matters more for the event
 
-Weather data includes:
+Example:
 
-- temperature
-- precipitation probability
-- wind speed
-- weather code
+```json
+{
+  "title": "Grocery Trip",
+  "start": "2026-06-19T17:30:00",
+  "end": "2026-06-19T18:15:00",
+  "location": "Grocery Store",
+  "outdoor": true
+}
+```
 
-### Generate Advice
+Because this is a sample local calendar, the app normalizes event dates to the current date while preserving the original event times. This makes the app useful whenever it is run, instead of always showing the static sample date.
 
-The app uses rule-based logic to generate advice.
+## 8. Weather Data
 
-Examples:
+The app uses Open-Meteo to fetch weather data using latitude and longitude.
 
-- If rain probability is 50% or higher, suggest carrying an umbrella.
-- If rain is likely and the user has events, suggest leaving early.
-- If an outdoor event exists and rain is likely, suggest a backup plan.
-- If temperature is 90°F or higher, suggest carrying water.
-- If temperature is 40°F or lower, suggest wearing a jacket.
-- If wind speed is 20 mph or higher, suggest caution outdoors.
+The weather module returns a simplified `Weather` object with:
 
-### CLI Interface
+* temperature in Fahrenheit
+* precipitation probability
+* wind speed in miles per hour
+* weather code
 
-The app runs in the terminal.
+## 9. Advice Rules
 
-Supported commands:
+The app uses rule-based advice logic.
 
-- `today`: shows schedule, weather, and advice
-- `exit`: closes the app
+Rules:
 
-## Non-Goals
+* If precipitation probability is 50% or higher, suggest carrying an umbrella.
+* If precipitation probability is 50% or higher and the user has scheduled events, suggest leaving 10 minutes early.
+* If precipitation probability is 50% or higher and an event is marked as outdoor, suggest a backup plan or rain protection.
+* If temperature is 90°F or higher, suggest carrying water and avoiding long outdoor exposure.
+* If temperature is 40°F or lower, suggest wearing a jacket or extra layer.
+* If wind speed is 20 mph or higher, suggest securing loose items and being careful outdoors.
+* If the user has events and none of the weather risk rules apply, say the weather looks manageable.
+* If the user has no events, say there are no scheduled events today.
 
-This project does not include:
+## 10. Architecture
 
-- Login accounts
-- A web interface
-- Real Google Calendar integration
-- Mobile notifications
-- AI-generated natural language responses
+The app is organized into small, focused modules:
 
-## Architecture
+* `src/main.py`: starts the program
+* `src/cli.py`: handles terminal commands and printed output
+* `src/calendar_reader.py`: reads and normalizes local calendar events
+* `src/weather_api.py`: fetches and parses Open-Meteo weather data
+* `src/advice_engine.py`: contains the rule-based advice logic
+* `src/models.py`: defines the shared `Event` and `Weather` data structures
 
-The system is split into focused modules:
+This separation keeps business logic away from print statements and makes the system easier to test.
 
-- `main.py`: starts the app
-- `cli.py`: handles terminal interaction
-- `calendar_reader.py`: reads local schedule data
-- `weather_api.py`: fetches and parses weather data
-- `advice_engine.py`: generates advice
-- `models.py`: defines shared data structures
+## 11. Test Strategy
 
-## Success Criteria
+Automated tests are required for the core logic.
+
+Tests should verify:
+
+* Rain triggers umbrella advice.
+* Rain plus scheduled events triggers leave-early advice.
+* Rain plus an outdoor event triggers backup-plan advice.
+* Hot weather triggers water advice.
+* Cold weather triggers jacket advice.
+* Windy weather triggers caution advice.
+* Safe weather produces normal-schedule advice.
+* Calendar events load from JSON correctly.
+* Sample event dates are normalized to today.
+* Open-Meteo API responses are parsed into the internal `Weather` model.
+
+## 12. Success Criteria
 
 The project is successful if:
 
-- The CLI runs without errors.
-- The app reads `calendar.json`.
-- The app fetches real weather data.
-- The app generates schedule-aware advice.
-- Automated tests prove the core advice logic works.
-- The codebase is modular and easy to understand.
+* The CLI runs without errors.
+* The `today` command displays schedule, weather, and advice.
+* The source code is modular.
+* API logic and advice logic are separate from terminal UI.
+* The PRD clearly defines what the app should do and why.
+* Tests cover meaningful behavior.
+* The README includes a Vibe Report explaining AI steering, drift, and manual fixes.
