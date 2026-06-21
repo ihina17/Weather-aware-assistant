@@ -1,0 +1,16 @@
+[
+  {
+    "title": "Class",
+    "start": "2026-06-19T10:00:00",
+    "end": "2026-06-19T11:30:00",
+    "location": "Campus",
+    "outdoor": false
+  },
+  {
+    "title": "Grocery Trip",
+    "start": "2026-06-19T17:30:00",
+    "end": "2026-06-19T18:15:00",
+    "location": "Grocery Store",
+    "outdoor": true
+  }
+]
